@@ -21,12 +21,14 @@ from django.urls import path
 from app.views import (
     EventListAPIView,
     EventSeatsAPIView,
+    HealthCheckAPIView,
     RegisterEventAPIView,
     UnregisterEventAPIView,
 )
 
 urlpatterns = [
     path("admin/", admin.site.urls),
+    path("health/", HealthCheckAPIView.as_view(), name="health"),
     path("api/events/", EventListAPIView.as_view(), name="event-list"),
     path("api/events/<uuid:event_id>/seats/", EventSeatsAPIView.as_view(), name="event-seats"),
     path("events/<uuid:event_id>/register/", RegisterEventAPIView.as_view(), name="event-register"),

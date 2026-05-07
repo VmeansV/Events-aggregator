@@ -1,8 +1,7 @@
 from django.core.cache import cache
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
-from django.utils.dateparse import parse_date
-from rest_framework import generics, serializers, status
+from rest_framework import generics, status
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -38,7 +37,7 @@ class EventListAPIView(generics.ListAPIView):
     queryset = Event.objects.all().select_related("place").order_by("event_time")
     serializer_class = EventSerializer
     pagination_class = EventPagination
-    # permission_classes = [HasLMSAPIKey]
+    permission_classes = [AllowAny]
 
     def get_queryset(self):
         queryset = super().get_queryset()
@@ -49,17 +48,6 @@ class EventListAPIView(generics.ListAPIView):
             queryset = queryset.filter(event_time__date__gte=date_from)
 
         return queryset
-
-    def list(self, request, *args, **kwargs):
-        change_at_param = self.request.query_params.get("change_at")
-
-        if not change_at_param:
-            raise serializers.ValidationError({"changed_at": ["This parameter is required."]})
-
-        if parse_date(change_at_param) is None:
-            raise serializers.ValidationError({"changed_at": ["Enter a valid date."]})
-
-        return super().list(request, *args, **kwargs)
 
 
 class EventSeatsAPIView(APIView):

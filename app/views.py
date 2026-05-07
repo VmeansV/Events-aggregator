@@ -17,6 +17,7 @@ from app.services import sync_events_from_provider
 
 class HealthCheckAPIView(APIView):
     permission_classes = [AllowAny]
+    authentication_classes = []
 
     def get(self, request):
         return Response({"status": "ok"}, status=200)
@@ -24,29 +25,27 @@ class HealthCheckAPIView(APIView):
 
 class SyncTriggerAPIView(APIView):
     permission_classes = [AllowAny]
+    authentication_classes = []
 
     def post(self, request, *args, **kwargs):
         try:
             count = sync_events_from_provider()
             return Response({"status": "success", "synced_count": count}, status=200)
         except Exception as e:
-            return Response({"status": "error", "message": str(e)}, status=500)
+            return Response({"error": str(e)}, status=500)
 
 
 class EventListAPIView(generics.ListAPIView):
+    permission_classes = [AllowAny]
     queryset = Event.objects.all().select_related("place").order_by("event_time")
     serializer_class = EventSerializer
     pagination_class = EventPagination
-    permission_classes = [AllowAny]
 
     def get_queryset(self):
-        queryset = super().get_queryset()
-
+        queryset = Event.objects.all().select_related("place").order_by("event_time")
         date_from = self.request.query_params.get("date_from")
-
         if date_from:
             queryset = queryset.filter(event_time__date__gte=date_from)
-
         return queryset
 
 

@@ -16,33 +16,26 @@ Including another URLconf
 """
 
 from django.contrib import admin
-from django.urls import path
+from django.urls import path, re_path
 
 from app.views import (
     EventDetailAPIView,
     EventListAPIView,
     EventSeatsAPIView,
     HealthCheckAPIView,
-    RegisterEventAPIView,
     SyncTriggerAPIView,
-    UnregisterEventAPIView,
+    TicketAPIView,
+    TicketDetailAPIView,
 )
 
 urlpatterns = [
     path("admin/", admin.site.urls),
-    path("api/health", HealthCheckAPIView.as_view(), name="health"),
-    path("api/sync/trigger", SyncTriggerAPIView.as_view(), name="sync-trigger"),
-    path("api/events", EventListAPIView.as_view(), name="event-list"),
-    path("api/events/<uuid:pk>", EventDetailAPIView.as_view(), name="event-detail"),
-    path("api/events/<uuid:event_id>/seats", EventSeatsAPIView.as_view(), name="event-seats"),
-    path(
-        "api/events/<uuid:event_id>/register",
-        RegisterEventAPIView.as_view(),
-        name="event-register",
-    ),
-    path(
-        "api/events/<uuid:event_id>/unregister",
-        UnregisterEventAPIView.as_view(),
-        name="event-unregister",
-    ),
+    # Регулярные выражения позволяют игнорировать наличие или отсутствие слэша в конце
+    re_path(r"^api/health/?$", HealthCheckAPIView.as_view()),
+    re_path(r"^api/sync/trigger/?$", SyncTriggerAPIView.as_view()),
+    re_path(r"^api/events/?$", EventListAPIView.as_view()),
+    re_path(r"^api/events/(?P<pk>[^/]+)/?$", EventDetailAPIView.as_view()),
+    re_path(r"^api/events/(?P<event_id>[^/]+)/seats/?$", EventSeatsAPIView.as_view()),
+    re_path(r"^api/tickets/?$", TicketAPIView.as_view()),
+    re_path(r"^api/tickets/(?P<ticket_id>[^/]+)/?$", TicketDetailAPIView.as_view()),
 ]

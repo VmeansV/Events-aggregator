@@ -2,6 +2,7 @@ from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from django.utils.dateparse import parse_date
 from rest_framework import generics, serializers, status
+from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -9,6 +10,13 @@ from app.models import Event, Registration
 from app.pagination import EventCursorPagination
 from app.permissions import HasLMSAPIKey
 from app.serializers import EventSerializer
+
+
+class HealthCheckAPIView(APIView):
+    permission_classes = [AllowAny]
+
+    def get(self, request):
+        return Response({"status": "ok"}, status=200)
 
 
 class EventListAPIView(generics.ListAPIView):

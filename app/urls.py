@@ -16,7 +16,7 @@ Including another URLconf
 """
 
 from django.contrib import admin
-from django.urls import path, re_path
+from django.urls import path
 
 from app.views import (
     EventDetailAPIView,
@@ -30,12 +30,11 @@ from app.views import (
 
 urlpatterns = [
     path("admin/", admin.site.urls),
-    # Регулярные выражения позволяют игнорировать наличие или отсутствие слэша в конце
-    re_path(r"^api/health/?$", HealthCheckAPIView.as_view()),
-    re_path(r"^api/sync/trigger/?$", SyncTriggerAPIView.as_view()),
-    re_path(r"^api/events/?$", EventListAPIView.as_view()),
-    re_path(r"^api/events/(?P<pk>[^/]+)/?$", EventDetailAPIView.as_view()),
-    re_path(r"^api/events/(?P<event_id>[^/]+)/seats/?$", EventSeatsAPIView.as_view()),
-    re_path(r"^api/tickets/?$", TicketAPIView.as_view()),
-    re_path(r"^api/tickets/(?P<ticket_id>[^/]+)/?$", TicketDetailAPIView.as_view()),
+    path("api/health", HealthCheckAPIView.as_view()),
+    path("api/sync/trigger", SyncTriggerAPIView.as_view()),
+    path("api/events", EventListAPIView.as_view()),
+    path("api/events/<uuid:pk>", EventDetailAPIView.as_view()),
+    path("api/events/<uuid:event_id>/seats", EventSeatsAPIView.as_view()),
+    path("api/tickets", TicketAPIView.as_view()),
+    path("api/tickets/<uuid:ticket_id>", TicketDetailAPIView.as_view()),
 ]

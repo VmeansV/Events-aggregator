@@ -23,6 +23,8 @@ class HealthCheckAPIView(APIView):
 
 
 class SyncTriggerAPIView(APIView):
+    permission_classes = [AllowAny]
+
     def post(self, request):
         try:
             count = sync_events_from_provider()
@@ -51,7 +53,7 @@ class EventListAPIView(generics.ListAPIView):
 
 
 class EventSeatsAPIView(APIView):
-    # permission_classes = [HasLMSAPIKey]
+    permission_classes = [AllowAny]
 
     def get(self, request, event_id):
         cache_key = f"seats_{event_id}"
@@ -73,7 +75,7 @@ class EventSeatsAPIView(APIView):
 
 
 class RegisterEventAPIView(APIView):
-    # permission_classes = [HasLMSAPIKey]
+    permission_classes = [AllowAny]
 
     def post(self, request, event_id):
         event = get_object_or_404(Event, id=event_id)
@@ -115,7 +117,7 @@ class RegisterEventAPIView(APIView):
 
 
 class UnregisterEventAPIView(APIView):
-    # permission_classes = [HasLMSAPIKey]
+    permission_classes = [AllowAny]
 
     def delete(self, request, event_id):
         event = get_object_or_404(Event, id=event_id)
@@ -145,9 +147,12 @@ class UnregisterEventAPIView(APIView):
 class EventDetailAPIView(generics.RetrieveAPIView):
     queryset = Event.objects.all().select_related("place")
     serializer_class = EventSerializer
+    permission_classes = [AllowAny]
 
 
 class TicketAPIView(APIView):
+    permission_classes = [AllowAny]
+
     def post(self, request):
         client = EventsProviderClient()
         try:
@@ -164,6 +169,8 @@ class TicketAPIView(APIView):
 
 
 class TicketDetailAPIView(APIView):
+    permission_classes = [AllowAny]
+
     def delete(self, request, ticket_id):
         client = EventsProviderClient()
         try:

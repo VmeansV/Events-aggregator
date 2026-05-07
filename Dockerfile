@@ -19,4 +19,4 @@ COPY . .
 EXPOSE 8000
 
 # По умолчанию запускаем сервер (но Docker Compose сможет это переопределить)
-CMD ["gunicorn", "--bind", "0.0.0.0:8000", "app.wsgi:application"]
+CMD ["sh", "-c", "python manage.py migrate && gunicorn --bind 0.0.0.0:8000 app.wsgi:application"]

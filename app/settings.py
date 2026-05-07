@@ -12,6 +12,8 @@ SECRET_KEY = os.getenv("SECRET_KEY", "django-insecure-default-key")
 
 DEBUG = False
 
+APPEND_SLASH = False
+
 ALLOWED_HOSTS = ["*"]
 
 # --- ПРИЛОЖЕНИЯ ---

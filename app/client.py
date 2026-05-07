@@ -24,3 +24,10 @@ class EventsProviderClient:
         payload = {"first_name": first_name, "last_name": last_name, "email": email, "seat": seat}
         response = httpx.post(url, json=payload, headers=self.headers)
         return response.json()
+
+    def unregister(self, ticket_id):
+        """Отмена регистрации у провайдера"""
+        url = f"{self.base_url}/tickets/{ticket_id}/"
+        response = httpx.delete(url, headers=self.headers)
+        response.raise_for_status()
+        return response.json()

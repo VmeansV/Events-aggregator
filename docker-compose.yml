@@ -1,0 +1,46 @@
+version: '3.8'
+
+services:
+  # 1. База данных
+  db:
+    image: postgres:15
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    env_file:
+      - .env
+
+  # 2. Веб-сервер (Django)
+  web:
+    build: .
+    command: >
+      sh -c "python manage.py migrate &&
+             gunicorn --bind 0.0.0.0:8000 app.wsgi:application"
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    depends_on:
+      - db
+
+  # 3. Воркер (Celery) - выполняет задачи
+  worker:
+    build: .
+    command: celery -A app worker --loglevel=info -P solo
+    env_file:
+      - .env
+    depends_on:
+      - db
+      - web
+
+  # 4. Бит (Celery Beat) - запускает задачи по расписанию
+  beat:
+    build: .
+    command: celery -A app beat --loglevel=info
+    env_file:
+      - .env
+    depends_on:
+      - db
+      - web
+
+volumes:
+  postgres_data:

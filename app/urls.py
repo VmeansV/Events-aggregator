@@ -19,6 +19,7 @@ from django.contrib import admin
 from django.urls import path
 
 from app.views import (
+    EventDetailAPIView,
     EventListAPIView,
     EventSeatsAPIView,
     HealthCheckAPIView,
@@ -32,6 +33,7 @@ urlpatterns = [
     path("health/", HealthCheckAPIView.as_view(), name="health"),
     path("sync/trigger/", SyncTriggerAPIView.as_view(), name="sync-trigger"),
     path("api/events/", EventListAPIView.as_view(), name="event-list"),
+    path("events/<uuid:pk>/", EventDetailAPIView.as_view(), name="event-detail"),
     path("api/events/<uuid:event_id>/seats/", EventSeatsAPIView.as_view(), name="event-seats"),
     path("events/<uuid:event_id>/register/", RegisterEventAPIView.as_view(), name="event-register"),
     path(

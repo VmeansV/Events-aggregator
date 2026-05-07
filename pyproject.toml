@@ -22,3 +22,11 @@ ignore = []
 [tool.ruff.lint.isort]
 # Чтобы импорты внутри Django-приложений группировались правильно
 known-first-party = ["events", "api"] # добавьте сюда имена своих приложений
+
+[tool.pytest.ini_options]
+# Указываем путь к настройкам Django
+DJANGO_SETTINGS_MODULE = "app.settings"
+# Указываем, что текущая папка должна быть в путях поиска
+pythonpath = ["."]
+# Где искать тесты
+testpaths = ["tests"]

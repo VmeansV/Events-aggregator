@@ -10,9 +10,10 @@ from rest_framework.views import APIView
 from app.client import EventsProviderClient
 from app.models import Event, Registration
 from app.pagination import EventPagination
-from app.permissions import HasLMSAPIKey
 from app.serializers import EventSerializer
 from app.services import sync_events_from_provider
+
+# from app.permissions import HasLMSAPIKey
 
 
 class HealthCheckAPIView(APIView):
@@ -37,7 +38,7 @@ class EventListAPIView(generics.ListAPIView):
     queryset = Event.objects.all().select_related("place").order_by("event_time")
     serializer_class = EventSerializer
     pagination_class = EventPagination
-    permission_classes = [HasLMSAPIKey]
+    # permission_classes = [HasLMSAPIKey]
 
     def get_queryset(self):
         queryset = super().get_queryset()
@@ -62,7 +63,7 @@ class EventListAPIView(generics.ListAPIView):
 
 
 class EventSeatsAPIView(APIView):
-    permission_classes = [HasLMSAPIKey]
+    # permission_classes = [HasLMSAPIKey]
 
     def get(self, request, event_id):
         cache_key = f"seats_{event_id}"
@@ -84,7 +85,7 @@ class EventSeatsAPIView(APIView):
 
 
 class RegisterEventAPIView(APIView):
-    permission_classes = [HasLMSAPIKey]
+    # permission_classes = [HasLMSAPIKey]
 
     def post(self, request, event_id):
         event = get_object_or_404(Event, id=event_id)
@@ -126,7 +127,7 @@ class RegisterEventAPIView(APIView):
 
 
 class UnregisterEventAPIView(APIView):
-    permission_classes = [HasLMSAPIKey]
+    # permission_classes = [HasLMSAPIKey]
 
     def delete(self, request, event_id):
         event = get_object_or_404(Event, id=event_id)

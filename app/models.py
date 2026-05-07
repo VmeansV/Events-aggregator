@@ -5,12 +5,8 @@ from django.db import models
 from model_utils.fields import MonitorField
 
 
-class User(models.Model):
-    pass
-
-
 class Place(models.Model):
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4)
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     name = models.CharField(max_length=255)
     city = models.CharField(max_length=255)
     address = models.CharField(max_length=255)
@@ -42,9 +38,9 @@ class Event(models.Model):
         NEW = "new"
         PUBLISHED = "published"
 
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4)
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     name = models.CharField(max_length=255)
-    place = models.ForeignKey(Place, on_delete=models.CASCADE)
+    place = models.ForeignKey("Place", on_delete=models.CASCADE)
     event_time = models.DateTimeField()
     registration_deadline = models.DateTimeField()
     status = models.CharField(max_length=255, choices=Status.choices, default=Status.NEW)
@@ -55,7 +51,11 @@ class Event(models.Model):
 
 
 class Registration(models.Model):
-    event = models.ForeignKey(Event, on_delete=models.CASCADE)
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    event = models.ForeignKey("Event", on_delete=models.CASCADE)
+    first_name = models.CharField(max_length=100)
+    last_name = models.CharField(max_length=100)
+    email = models.EmailField()
     seat = models.CharField(max_length=255)
     created_at = models.DateTimeField(auto_now_add=True)
 

@@ -18,10 +18,21 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path
 
-from app.views import EventListAPIView, EventSeatsAPIView
+from app.views import (
+    EventListAPIView,
+    EventSeatsAPIView,
+    RegisterEventAPIView,
+    UnregisterEventAPIView,
+)
 
 urlpatterns = [
     path("admin/", admin.site.urls),
     path("api/events/", EventListAPIView.as_view(), name="event-list"),
     path("api/events/<uuid:event_id>/seats/", EventSeatsAPIView.as_view(), name="event-seats"),
+    path("events/<uuid:event_id>/register/", RegisterEventAPIView.as_view(), name="event-register"),
+    path(
+        "events/<uuid:event_id>/unregister/",
+        UnregisterEventAPIView.as_view(),
+        name="event-unregister",
+    ),
 ]

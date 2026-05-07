@@ -1,4 +1,5 @@
 from django.shortcuts import get_object_or_404
+from django.utils import timezone
 from django.utils.dateparse import parse_date
 from rest_framework import generics, serializers, status
 from rest_framework.response import Response
@@ -63,3 +64,73 @@ class EventSeatsAPIView(APIView):
         free_seats.sort()
 
         return Response({"seats": free_seats})
+
+
+class RegisterEventAPIView(APIView):
+    permission_classes = [HasLMSAPIKey]
+
+    def post(self, request, event_id):
+        event = get_object_or_404(Event, id=event_id)
+        data = request.data
+
+        if event.statut != "published":
+            return Response(
+                {"detail": "Registration is only allowed for published events."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if timezone.now > event.registration_deadline:
+            return Response(
+                {"detail": "Registration deadline has passed."}, status=status.HTTP_400_BAD_REQUEST
+            )
+
+        seat = data.get("seat")
+
+        if seat not in event.place.get_all_seats():
+            return Response(
+                {"detail": f"Seat {seat} does not exist in this place."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if Registration.objects.filter(event=event, seat=seat).exists():
+            return Response(
+                ["This ticket is not available (already sold)."], status=status.HTTP_400_BAD_REQUEST
+            )
+
+        registration = Registration.objects.create(
+            event=event,
+            first_name=data.get("first_name"),
+            last_name=data.get("last_name"),
+            email=data.get("email"),
+            seat=seat,
+        )
+
+        return Response({"ticket_id": registration.id}, status=status.HTTP_201_CREATED)
+
+
+class UnregisterEventAPIView(APIView):
+    permission_classes = [HasLMSAPIKey]
+
+    def delete(self, request, event_id):
+        event = get_object_or_404(Event, id=event_id)
+        ticket_id = request.data.get("ticket_id")
+
+        if not ticket_id:
+            return Response(
+                {"detail": "ticket_id is required."}, status=status.HTTP_400_BAD_REQUEST
+            )
+
+        registration = Registration.objects.filter(ticket_id=ticket_id, event=event).first()
+
+        if not registration:
+            return Response({"detail": "Registration not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        if timezone.now > event.event_time:
+            return Response(
+                {"detail": "Cannot cancel registration for a past event."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        registration.delete()
+
+        return Response({"success": True}, status=status.HTTP_200_OK)

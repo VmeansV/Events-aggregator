@@ -25,14 +25,12 @@ class HealthCheckAPIView(APIView):
 class SyncTriggerAPIView(APIView):
     permission_classes = [AllowAny]
 
-    def post(self, request):
+    def post(self, request, *args, **kwargs):
         try:
             count = sync_events_from_provider()
-            return Response({"status": "success", "synced_count": count}, status=status.HTTP_200_OK)
+            return Response({"status": "success", "synced_count": count}, status=200)
         except Exception as e:
-            return Response(
-                {"status": "error", "message": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
-            )
+            return Response({"status": "error", "message": str(e)}, status=500)
 
 
 class EventListAPIView(generics.ListAPIView):

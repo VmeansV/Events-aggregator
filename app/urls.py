@@ -30,18 +30,18 @@ from app.views import (
 
 urlpatterns = [
     path("admin/", admin.site.urls),
-    path("api/health/", HealthCheckAPIView.as_view(), name="health"),
-    path("api/sync/trigger/", SyncTriggerAPIView.as_view(), name="sync-trigger"),
-    path("api/events/", EventListAPIView.as_view(), name="event-list"),
-    path("api/events/<uuid:pk>/", EventDetailAPIView.as_view(), name="event-detail"),
-    path("api/events/<uuid:event_id>/seats/", EventSeatsAPIView.as_view(), name="event-seats"),
+    path("api/health", HealthCheckAPIView.as_view(), name="health"),
+    path("api/sync/trigger", SyncTriggerAPIView.as_view(), name="sync-trigger"),
+    path("api/events", EventListAPIView.as_view(), name="event-list"),
+    path("api/events/<uuid:pk>", EventDetailAPIView.as_view(), name="event-detail"),
+    path("api/events/<uuid:event_id>/seats", EventSeatsAPIView.as_view(), name="event-seats"),
     path(
-        "api/events/<uuid:event_id>/register/",
+        "api/events/<uuid:event_id>/register",
         RegisterEventAPIView.as_view(),
         name="event-register",
     ),
     path(
-        "api/events/<uuid:event_id>/unregister/",
+        "api/events/<uuid:event_id>/unregister",
         UnregisterEventAPIView.as_view(),
         name="event-unregister",
     ),

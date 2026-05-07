@@ -62,23 +62,23 @@ TEMPLATES = [
 WSGI_APPLICATION = "app.wsgi.application"
 
 
-DATABASES = {
-    "default": dj_database_url.config(
-        default=os.getenv("POSTGRES_CONNECTION_STRING"), conn_max_age=600
-    )
-}
+db_url = os.getenv("POSTGRES_CONNECTION_STRING") or os.getenv("DATABASE_URL")
 
-if not DATABASES["default"].get("NAME"):
-    DATABASES["default"] = {
-        "ENGINE": "django.db.backends.postgresql",
-        "NAME": os.getenv("POSTGRES_DATABASE_NAME"),
-        "USER": os.getenv("POSTGRES_USERNAME"),
-        "PASSWORD": os.getenv("POSTGRES_PASSWORD"),
-        "HOST": os.getenv("POSTGRES_HOST"),
-        "PORT": os.getenv("POSTGRES_PORT", "5432"),
+if db_url:
+    DATABASES = {"default": dj_database_url.config(default=db_url)}
+else:
+    # Если строки нет, берем кусочки.
+    # ВАЖНО: Мы используем значения по умолчанию для локалки ('postgres')
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.postgresql",
+            "NAME": os.getenv("POSTGRES_DATABASE_NAME"),
+            "USER": os.getenv("POSTGRES_USERNAME"),
+            "PASSWORD": os.getenv("POSTGRES_PASSWORD"),
+            "HOST": os.getenv("POSTGRES_HOST"),
+            "PORT": os.getenv("POSTGRES_PORT"),
+        }
     }
-
-
 AUTH_PASSWORD_VALIDATORS = [
     {"NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"},
     {"NAME": "django.contrib.auth.password_validation.MinimumLengthValidator"},

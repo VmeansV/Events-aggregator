@@ -1,7 +1,7 @@
-from rest_framework.pagination import CursorPagination
+from rest_framework.pagination import PageNumberPagination
 
 
-class EventCursorPagination(CursorPagination):
-    page_size = 100
-    ordering = "changed_at"
-    cursor_query_param = "cursor"
+class EventPagination(PageNumberPagination):
+    page_size = 20
+    page_size_query_param = "page_size"
+    max_page_size = 100

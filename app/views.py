@@ -7,9 +7,10 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from app.models import Event, Registration
-from app.pagination import EventCursorPagination
+from app.pagination import EventPagination
 from app.permissions import HasLMSAPIKey
 from app.serializers import EventSerializer
+from app.services import sync_events_from_provider
 
 
 class HealthCheckAPIView(APIView):
@@ -19,22 +20,30 @@ class HealthCheckAPIView(APIView):
         return Response({"status": "ok"}, status=200)
 
 
+class SyncTriggerAPIView(APIView):
+    def post(self, request):
+        try:
+            count = sync_events_from_provider()
+            return Response({"status": "success", "synced_count": count}, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response(
+                {"status": "error", "message": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+
 class EventListAPIView(generics.ListAPIView):
+    queryset = Event.objects.all().select_related("place").order_by("event_time")
     serializer_class = EventSerializer
-    pagination_class = EventCursorPagination
+    pagination_class = EventPagination
     permission_classes = [HasLMSAPIKey]
 
     def get_queryset(self):
-        queryset = Event.objects.all().select_related("place")
-        change_at_param = self.request.query_params.get("change_at")
+        queryset = super().get_queryset()
 
-        if change_at_param:
-            date_value = parse_date(change_at_param)
+        date_from = self.request.query_params.get("date_from")
 
-            if date_value:
-                return queryset.filter(change_at__date__gte=date_value)
-            else:
-                pass
+        if date_from:
+            queryset = queryset.filter(event_time__date__gte=date_from)
 
         return queryset
 

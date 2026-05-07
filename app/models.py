@@ -1,8 +1,16 @@
 import re
 import uuid
+from datetime import datetime
 
 from django.db import models
+from django.utils import timezone
 from model_utils.fields import MonitorField
+
+
+class SyncMetadata(models.Model):
+    last_sync_time = models.DateTimeField(auto_now=True)
+    last_changed_at = models.DateTimeField(default=timezone.make_aware(datetime(2000, 1, 1)))
+    status = models.CharField(max_length=20, default="never_synced")
 
 
 class Place(models.Model):

@@ -23,12 +23,14 @@ from app.views import (
     EventSeatsAPIView,
     HealthCheckAPIView,
     RegisterEventAPIView,
+    SyncTriggerAPIView,
     UnregisterEventAPIView,
 )
 
 urlpatterns = [
     path("admin/", admin.site.urls),
     path("health/", HealthCheckAPIView.as_view(), name="health"),
+    path("sync/trigger/", SyncTriggerAPIView.as_view(), name="sync-trigger"),
     path("api/events/", EventListAPIView.as_view(), name="event-list"),
     path("api/events/<uuid:event_id>/seats/", EventSeatsAPIView.as_view(), name="event-seats"),
     path("events/<uuid:event_id>/register/", RegisterEventAPIView.as_view(), name="event-register"),

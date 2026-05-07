@@ -28,9 +28,7 @@ class Event(models.Model):
     place = models.ForeignKey(Place, on_delete=models.CASCADE)
     event_time = models.DateTimeField()
     registration_deadline = models.DateTimeField()
-    status = models.CharField(
-        max_length=255, choices=Status.choices, default=Status.NEW
-    )
+    status = models.CharField(max_length=255, choices=Status.choices, default=Status.NEW)
     number_of_visitors = models.IntegerField()
     changed_at = models.DateTimeField(auto_now=True)
     created_at = models.DateTimeField(auto_now_add=True)

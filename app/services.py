@@ -1,4 +1,5 @@
 import logging
+from datetime import timedelta
 
 from .client import EventsProviderClient
 from .models import Event, Place, SyncMetadata
@@ -10,8 +11,7 @@ logger = logging.getLogger(__name__)
 def sync_events_from_provider():
     client = EventsProviderClient()
     sync_info, _ = SyncMetadata.objects.get_or_create(id=1)
-    search_from = sync_info.last_changed_at
-
+    search_from = sync_info.last_changed_at - timedelta(minutes=1)
     try:
         # Передаем дату в формате ISO
         paginator = EventsPaginator(client, changed_at=search_from.date().isoformat())

@@ -85,15 +85,34 @@ class TicketAPIView(APIView):
 
     def post(self, request):
         client = EventsProviderClient()
+        event_id = request.data.get("event_id")
+        seat = request.data.get("seat")
+
         try:
-            # Агрегатор должен проксировать запрос к Провайдеру
+            # 1. Запрос к Провайдеру
             remote_response = client.register(
-                event_id=request.data.get("event_id"),
+                event_id=event_id,
                 first_name=request.data.get("first_name"),
                 last_name=request.data.get("last_name"),
                 email=request.data.get("email"),
-                seat=request.data.get("seat"),
+                seat=seat,
             )
+
+            # 2. ВАЖНО: Берем ID, который выдал Провайдер
+            provider_ticket_id = remote_response.get("ticket_id")
+
+            # 3. Сохраняем у себя с ЭТИМ ЖЕ ID
+            Registration.objects.update_or_create(
+                id=provider_ticket_id,  # Используем ID провайдера как первичный ключ
+                defaults={
+                    "event_id": event_id,
+                    "seat": seat,
+                    "first_name": request.data.get("first_name"),
+                    "last_name": request.data.get("last_name"),
+                    "email": request.data.get("email"),
+                },
+            )
+
             return Response(remote_response, status=status.HTTP_201_CREATED)
         except Exception as e:
             return Response({"error": str(e)}, status=400)

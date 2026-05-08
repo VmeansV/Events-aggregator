@@ -36,9 +36,10 @@ class EventsProviderClient:
             raise
 
     def get_seats(self, event_id):
-        # Провайдер требует слэш в конце!
+        # Добавляем слэш в конце ОБЯЗАТЕЛЬНО
         url = f"{self.base_url}/events/{event_id}/seats/"
         try:
+            # follow_redirects=True поможет, если Провайдер снова сменит путь
             response = httpx.get(url, headers=self.headers, timeout=10.0, follow_redirects=True)
             response.raise_for_status()
             return response.json()

@@ -11,4 +11,4 @@ django-celery-beat==2.9.0
 celery==5.6.3
 SQLAlchemy==2.0.49
 gunicorn
-dj_database_url
+dj-database-url

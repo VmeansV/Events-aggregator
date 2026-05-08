@@ -7,7 +7,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from app.client import EventsProviderClient
-from app.models import Event
+from app.models import Event, Registration
 from app.pagination import EventPagination
 from app.serializers import EventSerializer
 from app.services import sync_events_from_provider
@@ -105,11 +105,20 @@ class TicketDetailAPIView(APIView):
     permission_classes = [AllowAny]
 
     def delete(self, request, ticket_id):
+        # 1. Ищем регистрацию в НАШЕЙ базе, чтобы узнать, к какому событию она относится
+        reg = Registration.objects.filter(id=ticket_id).first()
+
+        if not reg:
+            return Response({"detail": "Registration not found locally."}, status=404)
+
         client = EventsProviderClient()
         try:
-            # Нам нужно передать это провайдеру.
-            # ВАЖНО: убедитесь, что в client.py метод unregister принимает ticket_id
-            client.unregister(ticket_id)
+            # 2. Передаем Провайдеру и event_id, и ticket_id
+            client.unregister(event_id=reg.event.id, ticket_id=ticket_id)
+
+            # 3. После успешного ответа от провайдера удаляем у себя
+            reg.delete()
+
             return Response({"success": True}, status=200)
         except Exception as e:
             return Response({"error": str(e)}, status=400)

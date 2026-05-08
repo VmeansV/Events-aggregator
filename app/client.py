@@ -36,8 +36,8 @@ class EventsProviderClient:
             raise
 
     def get_seats(self, event_id):
-        """Получение списка свободных мест для события"""
-        url = f"{self.base_url}/events/{event_id}/seats/"
+        # Убираем слэш в конце
+        url = f"{self.base_url}/events/{event_id}/seats"
         try:
             response = httpx.get(url, headers=self.headers, timeout=10.0)
             response.raise_for_status()
@@ -58,27 +58,16 @@ class EventsProviderClient:
             logger.error(f"Error during registration: {e}")
             raise
 
-    def unregister(self, ticket_id, event_id=None):
-        """
-        Отмена регистрации.
-        По ТЗ провайдера обычно требуется event_id в URL, но если мы его не знаем,
-        пробуем универсальный путь /api/tickets/{id} или логируем ошибку.
-        """
-        if event_id:
-            url = f"{self.base_url}/events/{event_id}/unregister/"
-        else:
-            # Если event_id не передан, пробуем прямой путь к тикету
-            url = f"{self.base_url}/tickets/{ticket_id}/"
-
+    def unregister(self, event_id, ticket_id):
+        # Провайдер требует event_id в пути!
+        url = f"{self.base_url}/events/{event_id}/unregister"
         payload = {"ticket_id": str(ticket_id)}
-
         try:
-            # Для DELETE запроса в httpx используем именованный аргумент json
             response = httpx.request(
                 "DELETE", url, json=payload, headers=self.headers, timeout=10.0
             )
             response.raise_for_status()
             return response.json()
         except httpx.HTTPError as e:
-            logger.error(f"Error during unregistration for ticket {ticket_id}: {e}")
+            logger.error(f"Error during unregistration: {e}")
             raise

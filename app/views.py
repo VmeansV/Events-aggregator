@@ -15,7 +15,6 @@ from app.serializers import EventSerializer
 from app.services import sync_events_from_provider
 
 
-# 0. Health Check - Проходит успешно
 class HealthCheckAPIView(APIView):
     permission_classes = [AllowAny]
     authentication_classes = []
@@ -24,7 +23,6 @@ class HealthCheckAPIView(APIView):
         return Response({"status": "ok"}, status=200)
 
 
-# 2. Ручная синхронизация
 @method_decorator(csrf_exempt, name="dispatch")
 class SyncTriggerAPIView(APIView):
     permission_classes = [AllowAny]
@@ -38,14 +36,12 @@ class SyncTriggerAPIView(APIView):
             return Response({"error": str(e)}, status=500)
 
 
-# 3. Список событий
 class EventListAPIView(generics.ListAPIView):
     permission_classes = [AllowAny]
     serializer_class = EventSerializer
     pagination_class = EventPagination
 
     def get_queryset(self):
-        # Оптимизируем запрос через select_related
         queryset = Event.objects.all().select_related("place").order_by("event_time")
         date_from = self.request.query_params.get("date_from")
         if date_from:
@@ -53,7 +49,6 @@ class EventListAPIView(generics.ListAPIView):
         return queryset
 
 
-# 4. Детали события
 class EventDetailAPIView(generics.RetrieveAPIView):
     queryset = Event.objects.all().select_related("place")
     serializer_class = EventSerializer
@@ -65,11 +60,8 @@ class EventSeatsAPIView(APIView):
     permission_classes = [AllowAny]
 
     def get(self, request, event_id):
-        # 1. Мы вызываем эту функцию только для того, чтобы Django выдал 404,
-        # если события нет в НАШЕЙ базе.
         event = get_object_or_404(Event, id=event_id)
 
-        # 2. Используем 'event.id' вместо 'event_id', теперь переменная "используется"
         cache_key = f"seats_{event.id}"
         cached_seats = cache.get(cache_key)
 
@@ -78,7 +70,6 @@ class EventSeatsAPIView(APIView):
                 {"event_id": str(event.id), "available_seats": cached_seats}, status=200
             )
 
-        # 3. Идем к Провайдеру
         client = EventsProviderClient()
         try:
             remote_data = client.get_seats(event.id)
@@ -91,13 +82,11 @@ class EventSeatsAPIView(APIView):
             )
 
         except httpx.HTTPStatusError as e:
-            # Если провайдер вернул 404, возвращаем его код, а не 500
             return Response({"detail": "Not found on provider"}, status=e.response.status_code)
         except Exception as e:
             return Response({"error": str(e)}, status=500)
 
 
-# 6. Регистрация (POST /api/tickets)
 @method_decorator(csrf_exempt, name="dispatch")
 class TicketAPIView(APIView):
     permission_classes = [AllowAny]
@@ -108,7 +97,6 @@ class TicketAPIView(APIView):
         seat = request.data.get("seat")
 
         try:
-            # 1. Запрос к Провайдеру
             remote_response = client.register(
                 event_id=event_id,
                 first_name=request.data.get("first_name"),
@@ -117,12 +105,10 @@ class TicketAPIView(APIView):
                 seat=seat,
             )
 
-            # 2. ВАЖНО: Берем ID, который выдал Провайдер
             provider_ticket_id = remote_response.get("ticket_id")
 
-            # 3. Сохраняем у себя с ЭТИМ ЖЕ ID
             Registration.objects.update_or_create(
-                id=provider_ticket_id,  # Используем ID провайдера как первичный ключ
+                id=provider_ticket_id,
                 defaults={
                     "event_id": event_id,
                     "seat": seat,
@@ -137,26 +123,20 @@ class TicketAPIView(APIView):
             return Response({"error": str(e)}, status=400)
 
 
-# 7. Отмена регистрации (DELETE /api/tickets/{id})
 @method_decorator(csrf_exempt, name="dispatch")
 class TicketDetailAPIView(APIView):
     permission_classes = [AllowAny]
 
     def delete(self, request, ticket_id):
-        # Пытаемся найти в нашей базе, чтобы узнать event_id
         reg = Registration.objects.filter(id=ticket_id).first()
 
-        # Если в базе нет, это может быть старый билет или ошибка теста.
-        # Чтобы не падать, попробуем обработать это.
         if not reg:
             return Response({"detail": "Ticket not found locally"}, status=404)
 
         client = EventsProviderClient()
         try:
-            # Передаем ОБА параметра
             client.unregister(event_id=reg.event.id, ticket_id=ticket_id)
 
-            # Если провайдер удалил, удаляем и у себя
             reg.delete()
             return Response({"success": True}, status=200)
         except Exception as e:

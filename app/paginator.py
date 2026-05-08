@@ -10,15 +10,12 @@ class EventsPaginator:
         return self
 
     def __next__(self):
-        # Если в текущем списке еще есть события, отдаем следующее
         if self.current_results:
             return self.current_results.pop(0)
 
-        # Если страниц больше нет, останавливаемся
         if not self.first_request and not self.next_url:
             raise StopIteration
 
-        # Загружаем следующую страницу через клиента
         data = self.client.get_events_page(url=self.next_url, changed_at=self.changed_at)
         self.first_request = False
         self.next_url = data.get("next")

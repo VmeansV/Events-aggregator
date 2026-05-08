@@ -5,22 +5,18 @@ import dj_database_url
 from celery.schedules import crontab
 from dotenv import load_dotenv
 
-# 1. Загружаем переменные в самом начале
 load_dotenv()
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 SECRET_KEY = os.getenv("SECRET_KEY", "django-insecure-default-key")
 
-# В LMS лучше держать False, но если нужно отладить 500 ошибку, можно временно ставить True
 DEBUG = os.getenv("DEBUG", "False") == "True"
 
-# Важно для 405 ошибки: отключаем автоматические редиректы
 APPEND_SLASH = False
 
 ALLOWED_HOSTS = ["*"]
 
-# --- ПРИЛОЖЕНИЯ ---
 INSTALLED_APPS = [
     "django.contrib.admin",
     "django.contrib.auth",
@@ -38,7 +34,7 @@ MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
-    "django.middleware.csrf.CsrfViewMiddleware",  # Если будут 403 ошибки, можно временно отключить
+    "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
@@ -64,8 +60,6 @@ TEMPLATES = [
 
 WSGI_APPLICATION = "app.wsgi.application"
 
-# --- БАЗА ДАННЫХ ---
-# Используем максимально надежный способ получения параметров
 POSTGRES_URL = os.getenv("POSTGRES_CONNECTION_STRING") or os.getenv("DATABASE_URL")
 
 if POSTGRES_URL:
@@ -82,13 +76,9 @@ else:
         }
     }
 
-# --- CELERY ---
-# Чтобы не собирать строку вручную (где может возникнуть ошибка 500),
-# берем готовую строку из переменной или используем ту, что собрали для БД.
 if POSTGRES_URL:
     CELERY_BROKER_URL = f"sqla+{POSTGRES_URL}"
 else:
-    # Безопасная сборка URL для Celery
     _db = DATABASES["default"]
     CELERY_BROKER_URL = f"sqla+postgresql://{_db['USER']}:{_db['PASSWORD']}@{_db['HOST']}:{_db['PORT']}/{_db['NAME']}"
 
@@ -102,12 +92,11 @@ CELERY_BEAT_SCHEDULER = "django_celery_beat.schedulers:DatabaseScheduler"
 
 CELERY_BEAT_SCHEDULE = {
     "sync-events-every-day": {
-        "task": "sync_events_task",  # Убедитесь, что в tasks.py name="sync_events_task"
+        "task": "sync_events_task",
         "schedule": crontab(hour=3, minute=0),
     },
 }
 
-# --- ОСТАЛЬНЫЕ НАСТРОЙКИ ---
 AUTH_PASSWORD_VALIDATORS = [
     {"NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"},
     {"NAME": "django.contrib.auth.password_validation.MinimumLengthValidator"},

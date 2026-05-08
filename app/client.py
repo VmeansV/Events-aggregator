@@ -15,7 +15,7 @@ class EventsProviderClient:
         ).rstrip("/")
 
         # 2. API-ключ (обязательно должен быть в .env или настройках LMS)
-        self.api_key = os.getenv("LMS_API_KEY", "")
+        self.api_key = os.getenv("API_KEY") or os.getenv("LMS_API_KEY")
 
         self.headers = {"X-API-Key": self.api_key, "Content-Type": "application/json"}
 

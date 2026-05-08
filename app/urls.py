@@ -13,19 +13,11 @@ from app.views import (
 
 urlpatterns = [
     path("admin/", admin.site.urls),
-    # re_path с /?$ позволяет эндпоинту работать И со слэшем, И без него.
-    # Это гарантированно убирает 404 и 405 ошибки из-за редиректов.
-    re_path(r"^api/health/?$", HealthCheckAPIView.as_view(), name="health"),
-    re_path(r"^api/sync/trigger/?$", SyncTriggerAPIView.as_view(), name="sync-trigger"),
-    re_path(r"^api/events/?$", EventListAPIView.as_view(), name="event-list"),
-    re_path(r"^api/events/(?P<pk>[^/]+)/?$", EventDetailAPIView.as_view(), name="event-detail"),
-    re_path(
-        r"^api/events/(?P<event_id>[^/]+)/seats/?$", EventSeatsAPIView.as_view(), name="event-seats"
-    ),
-    re_path(r"^api/tickets/?$", TicketAPIView.as_view(), name="ticket-register"),
-    re_path(
-        r"^api/tickets/(?P<ticket_id>[^/]+)/?$",
-        TicketDetailAPIView.as_view(),
-        name="ticket-unregister",
-    ),
+    re_path(r"^api/health/?$", HealthCheckAPIView.as_view()),
+    re_path(r"^api/sync/trigger/?$", SyncTriggerAPIView.as_view()),
+    re_path(r"^api/events/?$", EventListAPIView.as_view()),
+    re_path(r"^api/events/(?P<pk>[^/]+)/?$", EventDetailAPIView.as_view()),
+    re_path(r"^api/events/(?P<event_id>[^/]+)/seats/?$", EventSeatsAPIView.as_view()),
+    re_path(r"^api/tickets/?$", TicketAPIView.as_view()),
+    re_path(r"^api/tickets/(?P<ticket_id>[^/]+)/?$", TicketDetailAPIView.as_view()),
 ]

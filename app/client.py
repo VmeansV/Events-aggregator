@@ -36,10 +36,10 @@ class EventsProviderClient:
             raise
 
     def get_seats(self, event_id):
-        # Убираем слэш в конце
-        url = f"{self.base_url}/events/{event_id}/seats"
+        # Провайдер требует слэш в конце!
+        url = f"{self.base_url}/events/{event_id}/seats/"
         try:
-            response = httpx.get(url, headers=self.headers, timeout=10.0)
+            response = httpx.get(url, headers=self.headers, timeout=10.0, follow_redirects=True)
             response.raise_for_status()
             return response.json()
         except httpx.HTTPError as e:
@@ -47,11 +47,13 @@ class EventsProviderClient:
             raise
 
     def register(self, event_id, first_name, last_name, email, seat):
-        """Регистрация на событие у провайдера"""
+        # Провайдер требует слэш в конце!
         url = f"{self.base_url}/events/{event_id}/register/"
         payload = {"first_name": first_name, "last_name": last_name, "email": email, "seat": seat}
         try:
-            response = httpx.post(url, json=payload, headers=self.headers, timeout=10.0)
+            response = httpx.post(
+                url, json=payload, headers=self.headers, timeout=10.0, follow_redirects=True
+            )
             response.raise_for_status()
             return response.json()
         except httpx.HTTPError as e:
@@ -59,12 +61,17 @@ class EventsProviderClient:
             raise
 
     def unregister(self, event_id, ticket_id):
-        # Провайдер требует event_id в пути!
-        url = f"{self.base_url}/events/{event_id}/unregister"
+        # Провайдер требует слэш в конце!
+        url = f"{self.base_url}/events/{event_id}/unregister/"
         payload = {"ticket_id": str(ticket_id)}
         try:
             response = httpx.request(
-                "DELETE", url, json=payload, headers=self.headers, timeout=10.0
+                "DELETE",
+                url,
+                json=payload,
+                headers=self.headers,
+                timeout=10.0,
+                follow_redirects=True,
             )
             response.raise_for_status()
             return response.json()

@@ -105,20 +105,21 @@ class TicketDetailAPIView(APIView):
     permission_classes = [AllowAny]
 
     def delete(self, request, ticket_id):
-        # 1. Ищем регистрацию в НАШЕЙ базе, чтобы узнать, к какому событию она относится
+        # Пытаемся найти в нашей базе, чтобы узнать event_id
         reg = Registration.objects.filter(id=ticket_id).first()
 
+        # Если в базе нет, это может быть старый билет или ошибка теста.
+        # Чтобы не падать, попробуем обработать это.
         if not reg:
-            return Response({"detail": "Registration not found locally."}, status=404)
+            return Response({"detail": "Ticket not found locally"}, status=404)
 
         client = EventsProviderClient()
         try:
-            # 2. Передаем Провайдеру и event_id, и ticket_id
+            # Передаем ОБА параметра
             client.unregister(event_id=reg.event.id, ticket_id=ticket_id)
 
-            # 3. После успешного ответа от провайдера удаляем у себя
+            # Если провайдер удалил, удаляем и у себя
             reg.delete()
-
             return Response({"success": True}, status=200)
         except Exception as e:
             return Response({"error": str(e)}, status=400)

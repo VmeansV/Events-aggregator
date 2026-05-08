@@ -8,15 +8,18 @@ logger = logging.getLogger(__name__)
 
 class EventsProviderClient:
     def __init__(self):
-        # 1. Базовый URL провайдера из переменной окружения или внутренний адрес кластера
+        # 1. URL
         self.base_url = os.getenv(
             "EVENTS_PROVIDER_URL",
             "http://student-system-events-provider-web.student-system-events-provider.svc:8000/api",
         ).rstrip("/")
 
-        # 2. API-ключ (обязательно должен быть в .env или настройках LMS)
-        self.api_key = os.getenv("API_KEY") or os.getenv("LMS_API_KEY")
+        # 2. API-ключ. Пробуем три варианта, чтобы точно не получить None
+        # Сначала системный API_KEY, потом LMS_API_KEY, если нет - пустая строка
+        env_key = os.getenv("API_KEY") or os.getenv("LMS_API_KEY")
+        self.api_key = str(env_key) if env_key is not None else ""
 
+        # Убедимся, что заголовок всегда строка
         self.headers = {"X-API-Key": self.api_key, "Content-Type": "application/json"}
 
     def get_events_page(self, url=None, changed_at=None):

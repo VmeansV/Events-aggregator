@@ -1,4 +1,6 @@
+import httpx
 from django.core.cache import cache
+from django.shortcuts import get_object_or_404
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt
 from rest_framework import generics, status
@@ -63,17 +65,34 @@ class EventSeatsAPIView(APIView):
     permission_classes = [AllowAny]
 
     def get(self, request, event_id):
-        cache_key = f"seats_{event_id}"
-        cached_seats = cache.get(cache_key)
-        if cached_seats:
-            return Response({"event_id": event_id, "available_seats": cached_seats})
+        # 1. Мы вызываем эту функцию только для того, чтобы Django выдал 404,
+        # если события нет в НАШЕЙ базе.
+        event = get_object_or_404(Event, id=event_id)
 
+        # 2. Используем 'event.id' вместо 'event_id', теперь переменная "используется"
+        cache_key = f"seats_{event.id}"
+        cached_seats = cache.get(cache_key)
+
+        if cached_seats:
+            return Response(
+                {"event_id": str(event.id), "available_seats": cached_seats}, status=200
+            )
+
+        # 3. Идем к Провайдеру
         client = EventsProviderClient()
         try:
-            remote_data = client.get_seats(event_id)
+            remote_data = client.get_seats(event.id)
             available_seats = remote_data.get("seats", [])
+
             cache.set(cache_key, available_seats, timeout=30)
-            return Response({"event_id": event_id, "available_seats": available_seats})
+
+            return Response(
+                {"event_id": str(event.id), "available_seats": available_seats}, status=200
+            )
+
+        except httpx.HTTPStatusError as e:
+            # Если провайдер вернул 404, возвращаем его код, а не 500
+            return Response({"detail": "Not found on provider"}, status=e.response.status_code)
         except Exception as e:
             return Response({"error": str(e)}, status=500)
 

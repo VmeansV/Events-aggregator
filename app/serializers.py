@@ -22,7 +22,4 @@ class EventSerializer(serializers.ModelSerializer):
             "registration_deadline",
             "status",
             "number_of_visitors",
-            "changed_at",
-            "created_at",
-            "status_changed_at",
         ]

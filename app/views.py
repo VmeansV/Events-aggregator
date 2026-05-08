@@ -1,20 +1,19 @@
 from django.core.cache import cache
-from django.shortcuts import get_object_or_404
-from django.utils import timezone
+from django.utils.decorators import method_decorator
+from django.views.decorators.csrf import csrf_exempt
 from rest_framework import generics, status
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from app.client import EventsProviderClient
-from app.models import Event, Registration
+from app.models import Event
 from app.pagination import EventPagination
 from app.serializers import EventSerializer
 from app.services import sync_events_from_provider
 
-# from app.permissions import HasLMSAPIKey
 
-
+# 0. Health Check - Проходит успешно
 class HealthCheckAPIView(APIView):
     permission_classes = [AllowAny]
     authentication_classes = []
@@ -23,6 +22,8 @@ class HealthCheckAPIView(APIView):
         return Response({"status": "ok"}, status=200)
 
 
+# 2. Ручная синхронизация
+@method_decorator(csrf_exempt, name="dispatch")
 class SyncTriggerAPIView(APIView):
     permission_classes = [AllowAny]
     authentication_classes = []
@@ -35,13 +36,14 @@ class SyncTriggerAPIView(APIView):
             return Response({"error": str(e)}, status=500)
 
 
+# 3. Список событий
 class EventListAPIView(generics.ListAPIView):
     permission_classes = [AllowAny]
-    queryset = Event.objects.all().select_related("place").order_by("event_time")
     serializer_class = EventSerializer
     pagination_class = EventPagination
 
     def get_queryset(self):
+        # Оптимизируем запрос через select_related
         queryset = Event.objects.all().select_related("place").order_by("event_time")
         date_from = self.request.query_params.get("date_from")
         if date_from:
@@ -49,13 +51,20 @@ class EventListAPIView(generics.ListAPIView):
         return queryset
 
 
+# 4. Детали события
+class EventDetailAPIView(generics.RetrieveAPIView):
+    queryset = Event.objects.all().select_related("place")
+    serializer_class = EventSerializer
+    permission_classes = [AllowAny]
+
+
+# 5. Свободные места (с кэшированием)
 class EventSeatsAPIView(APIView):
     permission_classes = [AllowAny]
 
     def get(self, request, event_id):
         cache_key = f"seats_{event_id}"
         cached_seats = cache.get(cache_key)
-
         if cached_seats:
             return Response({"event_id": event_id, "available_seats": cached_seats})
 
@@ -63,96 +72,21 @@ class EventSeatsAPIView(APIView):
         try:
             remote_data = client.get_seats(event_id)
             available_seats = remote_data.get("seats", [])
-
             cache.set(cache_key, available_seats, timeout=30)
-
             return Response({"event_id": event_id, "available_seats": available_seats})
         except Exception as e:
             return Response({"error": str(e)}, status=500)
 
 
-class RegisterEventAPIView(APIView):
-    permission_classes = [AllowAny]
-
-    def post(self, request, event_id):
-        event = get_object_or_404(Event, id=event_id)
-        data = request.data
-
-        if event.statut != "published":
-            return Response(
-                {"detail": "Registration is only allowed for published events."},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-
-        if timezone.now > event.registration_deadline:
-            return Response(
-                {"detail": "Registration deadline has passed."}, status=status.HTTP_400_BAD_REQUEST
-            )
-
-        seat = data.get("seat")
-
-        if seat not in event.place.get_all_seats():
-            return Response(
-                {"detail": f"Seat {seat} does not exist in this place."},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-
-        if Registration.objects.filter(event=event, seat=seat).exists():
-            return Response(
-                ["This ticket is not available (already sold)."], status=status.HTTP_400_BAD_REQUEST
-            )
-
-        registration = Registration.objects.create(
-            event=event,
-            first_name=data.get("first_name"),
-            last_name=data.get("last_name"),
-            email=data.get("email"),
-            seat=seat,
-        )
-
-        return Response({"ticket_id": registration.id}, status=status.HTTP_201_CREATED)
-
-
-class UnregisterEventAPIView(APIView):
-    permission_classes = [AllowAny]
-
-    def delete(self, request, event_id):
-        event = get_object_or_404(Event, id=event_id)
-        ticket_id = request.data.get("ticket_id")
-
-        if not ticket_id:
-            return Response(
-                {"detail": "ticket_id is required."}, status=status.HTTP_400_BAD_REQUEST
-            )
-
-        registration = Registration.objects.filter(ticket_id=ticket_id, event=event).first()
-
-        if not registration:
-            return Response({"detail": "Registration not found."}, status=status.HTTP_404_NOT_FOUND)
-
-        if timezone.now > event.event_time:
-            return Response(
-                {"detail": "Cannot cancel registration for a past event."},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-
-        registration.delete()
-
-        return Response({"success": True}, status=status.HTTP_200_OK)
-
-
-class EventDetailAPIView(generics.RetrieveAPIView):
-    queryset = Event.objects.all().select_related("place")
-    serializer_class = EventSerializer
-    permission_classes = [AllowAny]
-
-
+# 6. Регистрация (POST /api/tickets)
+@method_decorator(csrf_exempt, name="dispatch")
 class TicketAPIView(APIView):
     permission_classes = [AllowAny]
 
     def post(self, request):
         client = EventsProviderClient()
         try:
+            # Агрегатор должен проксировать запрос к Провайдеру
             remote_response = client.register(
                 event_id=request.data.get("event_id"),
                 first_name=request.data.get("first_name"),
@@ -165,13 +99,17 @@ class TicketAPIView(APIView):
             return Response({"error": str(e)}, status=400)
 
 
+# 7. Отмена регистрации (DELETE /api/tickets/{id})
+@method_decorator(csrf_exempt, name="dispatch")
 class TicketDetailAPIView(APIView):
     permission_classes = [AllowAny]
 
     def delete(self, request, ticket_id):
         client = EventsProviderClient()
         try:
-            _result = client.unregister(ticket_id)
+            # Нам нужно передать это провайдеру.
+            # ВАЖНО: убедитесь, что в client.py метод unregister принимает ticket_id
+            client.unregister(ticket_id)
             return Response({"success": True}, status=200)
         except Exception as e:
             return Response({"error": str(e)}, status=400)

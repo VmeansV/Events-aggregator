@@ -69,3 +69,15 @@ class Registration(models.Model):
 
     class Meta:
         unique_together = ("event", "seat")
+
+
+class OutboxMessage(models.Model):
+    class Status(models.TextChoices):
+        PENDING = "pending"
+        PROCESSED = "processed"
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    type = models.CharField(max_length=20, choices=Status.choices, default=Status.PENDING)
+    payload = models.JSONField()
+    processed = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)

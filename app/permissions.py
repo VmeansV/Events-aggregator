@@ -1,5 +1,4 @@
-import os
-
+from django.conf import settings
 from rest_framework import status
 from rest_framework.exceptions import APIException
 from rest_framework.permissions import BasePermission
@@ -13,7 +12,7 @@ class UnauthenticatedAPIKey(APIException):
 class HasLMSAPIKey(BasePermission):
     def has_permission(self, request, view):
         api_key = request.headers.get("x-api-key")
-        correct_key = os.getenv("LMS_API_KEY")
+        correct_key = settings.LMS_API_KEY
 
         if api_key == correct_key:
             return True

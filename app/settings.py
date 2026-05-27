@@ -120,3 +120,10 @@ REST_FRAMEWORK = {
     ],
     "DEFAULT_AUTHENTICATION_CLASSES": [],
 }
+
+
+EVENTS_PROVIDER_URL = os.getenv(
+    "EVENTS_PROVIDER_URL",
+    "http://student-system-events-provider-web.student-system-events-provider.svc:8000/api",
+)
+LMS_API_KEY = os.getenv("LMS_API_KEY")

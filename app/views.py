@@ -1,4 +1,5 @@
 import httpx
+from django.http import Http404
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt
 from rest_framework import generics, status
@@ -64,6 +65,8 @@ class EventSeatsAPIView(APIView):
         try:
             result = get_event_seats_with_cache(event_id)
             return Response(result, status=200)
+        except Http404:
+            raise
         except httpx.HTTPStatusError as e:
             return Response({"detail": "Not found on provider"}, status=e.response.status_code)
         except Exception as e:

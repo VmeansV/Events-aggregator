@@ -44,7 +44,10 @@ class EventPaginationTestCase(APITestCase):
 
         self.assertIsNotNone(
             response.data.get("next"),
-            msg=f"Next page link is missing. Page size is {self.page_size}, created {count_to_create} items.",
+            msg=(
+                f"Next page link is missing. Page size is {self.page_size}",
+                f"created {count_to_create} items.",
+            ),
         )
         self.assertEqual(len(response.data["results"]), self.page_size)
 

@@ -2,12 +2,12 @@ import httpx
 from django.http import Http404
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt
-from exceptions import IdempotencyConflictError
 from rest_framework import generics, status
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from app.exceptions import IdempotencyConflictError
 from app.models import Event
 from app.pagination import EventPagination
 from app.serializers import EventSerializer

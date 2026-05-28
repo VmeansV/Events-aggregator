@@ -62,6 +62,9 @@ WSGI_APPLICATION = "app.wsgi.application"
 
 POSTGRES_URL = os.getenv("POSTGRES_CONNECTION_STRING") or os.getenv("DATABASE_URL")
 
+if POSTGRES_URL and POSTGRES_URL.startswith("postgres://"):
+    POSTGRES_URL = POSTGRES_URL.replace("postgres://", "postgresql://", 1)
+
 if POSTGRES_URL:
     DATABASES = {"default": dj_database_url.config(default=POSTGRES_URL, conn_max_age=600)}
 else:
@@ -96,7 +99,7 @@ CELERY_BEAT_SCHEDULE = {
         "schedule": crontab(hour=3, minute=0),
     },
     "recover-outbox-messages-every-5-min": {
-        "task": "app.tasks.processe_outbox_message",
+        "task": "app.tasks.process_outbox_message",
         "schedule": 300.0,
     },
 }

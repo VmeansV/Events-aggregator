@@ -44,9 +44,9 @@ def create_ticket_registration(data):
 
         if existing_reg:
             if (
-                str(existing_reg.event_id) == str(event_id)
-                or existing_reg.seat == seat
-                or existing_reg.email == email
+                str(existing_reg.event_id) != str(event_id)
+                or existing_reg.seat != seat
+                or existing_reg.email != email
             ):
                 raise IdempotencyConflictError("Key already used by other data")
 

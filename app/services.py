@@ -8,6 +8,7 @@ from django.shortcuts import get_object_or_404
 from app.client import EventsProviderClient
 from app.exceptions import IdempotencyConflictError
 from app.models import Event, OutboxMessage, Registration
+from app.serializers import RegistrationSerializer
 from app.tasks import process_outbox_message
 
 logger = logging.getLogger(__name__)
@@ -49,13 +50,7 @@ def create_ticket_registration(data):
             ):
                 raise IdempotencyConflictError("Key already used by other data")
 
-        return {
-            "ticket_id": str(existing_reg.id),
-            "event_id": str(existing_reg.event_id),
-            "seat": existing_reg.seat,
-            "first_name": existing_reg.first_name,
-            "last_name": existing_reg.last_name,
-        }
+            return RegistrationSerializer(existing_reg).data
 
     # Выполняем запрос к провайдеру
     client = EventsProviderClient()
@@ -71,34 +66,30 @@ def create_ticket_registration(data):
 
     # Сохраняем в нашу БД
     with transaction.atomic():
-        Registration.objects.update_or_create(
+        reg = Registration.objects.create(
             id=provider_ticket_id,
-            defaults={
-                "event_id": event_id,
-                "seat": seat,
-                "first_name": data.get("first_name"),
-                "last_name": data.get("last_name"),
-                "email": data.get("email"),
-            },
+            event_id=event_id,
+            seat=seat,
+            first_name=data.get("first_name"),
+            last_name=data.get("last_name"),
+            email=email,
+            idempotency_key=client_key,
         )
 
         outbox_id = uuid.uuid4()
-
-        outbox_msg = OutboxMessage.objects.create(
+        OutboxMessage.objects.create(
             id=outbox_id,
             event_type="ticket_purchased",
             payload={
-                "ticket_id": provider_ticket_id,
-                "email": data.get("email"),
-                "fullname": f"{data.get('first_name')} {data.get('last_name')}",
                 "message": "Билет куплен",
-                "idempotency_key": outbox_id,
+                "reference_id": str(provider_ticket_id),
+                "idempotency_key": str(outbox_id),
             },
         )
 
-        transaction.on_commit(lambda: process_outbox_message.delay(outbox_msg.id))
+        transaction.on_commit(lambda: process_outbox_message.delay(outbox_id))
 
-    return remote_response
+    return RegistrationSerializer(reg).data
 
 
 def cancel_ticket_registration(ticket_id):

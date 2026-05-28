@@ -75,9 +75,12 @@ class OutboxMessage(models.Model):
     class Status(models.TextChoices):
         PENDING = "pending"
         PROCESSED = "processed"
+        FAILED = "failed"
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    type = models.CharField(max_length=20, choices=Status.choices, default=Status.PENDING)
+    event_type = models.CharField(max_length=255)
+    status = models.CharField(
+        max_length=20, choices=Status.choices, default=Status.PENDING, db_index=True
+    )
     payload = models.JSONField()
-    processed = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)

@@ -66,6 +66,7 @@ class Registration(models.Model):
     email = models.EmailField(max_length=255, null=False)
     seat = models.CharField(max_length=255)
     created_at = models.DateTimeField(auto_now_add=True)
+    idempotency_key = models.CharField(max_length=255, null=True, blank=True, unique=True)
 
     class Meta:
         unique_together = ("event", "seat")

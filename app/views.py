@@ -2,6 +2,7 @@ import httpx
 from django.http import Http404
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt
+from exceptions import IdempotencyConflictError
 from rest_framework import generics, status
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
@@ -78,11 +79,11 @@ class TicketAPIView(APIView):
 
     def post(self, request):
         try:
-            # Вся логика теперь внутри одной функции
             result = create_ticket_registration(request.data)
             return Response(result, status=status.HTTP_201_CREATED)
+        except IdempotencyConflictError as e:
+            return Response({"error": str(e)}, status=status.HTTP_409_CONFLICT)
         except Exception as e:
-            # Здесь можно добавить более детальную обработку ошибок
             return Response({"error": str(e)}, status=400)
 
 

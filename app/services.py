@@ -8,6 +8,7 @@ from django.shortcuts import get_object_or_404
 from django.utils.dateparse import parse_datetime
 
 from app.client import EventsProviderClient
+from app.exceptions import IdempotencyConflictError
 from app.models import Event, OutboxMessage, Place, Registration, SyncMetadata
 from app.paginator import EventsPaginator
 
@@ -87,16 +88,37 @@ def get_event_seats_with_cache(event_id):
 
 def create_ticket_registration(data):
     """Бизнес-логика покупки билета."""
-    client = EventsProviderClient()
+    client_key = data.get("idempotency_key")
     event_id = data.get("event_id")
     seat = data.get("seat")
+    email = data.get("email")
+
+    if client_key:
+        existing_reg = Registration.objects.filter(idempotency_key=client_key).first()
+
+        if existing_reg:
+            if (
+                str(existing_reg.event_id) == str(event_id)
+                or existing_reg.seat == seat
+                or existing_reg.email == email
+            ):
+                raise IdempotencyConflictError("Key already used by other data")
+
+        return {
+            "ticket_id": str(existing_reg.id),
+            "event_id": str(existing_reg.event_id),
+            "seat": existing_reg.seat,
+            "first_name": existing_reg.first_name,
+            "last_name": existing_reg.last_name,
+        }
 
     # Выполняем запрос к провайдеру
+    client = EventsProviderClient()
     remote_response = client.register(
         event_id=event_id,
         first_name=data.get("first_name"),
         last_name=data.get("last_name"),
-        email=data.get("email"),
+        email=email,
         seat=seat,
     )
 

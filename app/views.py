@@ -15,8 +15,8 @@ from app.services import (
     cancel_ticket_registration,
     create_ticket_registration,
     get_event_seats_with_cache,
-    sync_events_from_provider,
 )
+from app.sync_event import sync_events_from_provider
 
 
 class HealthCheckAPIView(APIView):

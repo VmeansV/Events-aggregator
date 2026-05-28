@@ -7,7 +7,7 @@ from django.shortcuts import get_object_or_404
 from django.utils.dateparse import parse_datetime
 
 from app.client import EventsProviderClient
-from app.models import Event, Place, Registration, SyncMetadata
+from app.models import Event, OutboxMessage, Place, Registration, SyncMetadata
 from app.paginator import EventsPaginator
 
 logger = logging.getLogger(__name__)
@@ -113,6 +113,21 @@ def create_ticket_registration(data):
                 "email": data.get("email"),
             },
         )
+
+        _outbox_msg = OutboxMessage.objects.create(
+            event_type="ticket_purchased",
+            payload={
+                "ticket_id": provider_ticket_id,
+                "email": data.get("email"),
+                "fullname": f"{data.get('first_name')} {data.get('last_name')}",
+                "message": "Билет куплен",
+            },
+        )
+
+        # ЗАГЛУШКА
+        # transaction.on_commit(
+        # lambda: process_outbox_message.delay(outbox_msg.id)
+        # )
 
     return remote_response
 

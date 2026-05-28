@@ -11,6 +11,7 @@ from app.client import EventsProviderClient
 from app.exceptions import IdempotencyConflictError
 from app.models import Event, OutboxMessage, Place, Registration, SyncMetadata
 from app.paginator import EventsPaginator
+from app.tasks import process_outbox_message
 
 logger = logging.getLogger(__name__)
 
@@ -139,7 +140,7 @@ def create_ticket_registration(data):
 
         outbox_id = uuid.uuid4()
 
-        _outbox_msg = OutboxMessage.objects.create(
+        outbox_msg = OutboxMessage.objects.create(
             id=outbox_id,
             event_type="ticket_purchased",
             payload={
@@ -151,10 +152,7 @@ def create_ticket_registration(data):
             },
         )
 
-        # ЗАГЛУШКА
-        # transaction.on_commit(
-        # lambda: process_outbox_message.delay(outbox_msg.id)
-        # )
+        transaction.on_commit(lambda: process_outbox_message.delay(outbox_msg.id))
 
     return remote_response
 

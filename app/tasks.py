@@ -5,7 +5,7 @@ from celery.exceptions import MaxRetriesExceededError
 
 from app.client import CapashinoClient
 from app.models import OutboxMessage
-from app.services import sync_events_from_provider
+from app.sync_event import sync_events_from_provider
 
 logger = logging.getLogger(__name__)
 

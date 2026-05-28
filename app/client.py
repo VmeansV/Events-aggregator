@@ -7,12 +7,22 @@ from django.conf import settings
 logger = logging.getLogger(__name__)
 
 
-class EventsProviderClient:
+class BaseClient:
+    def __init__(self, base_url, timeout=10):
+        self.base_url = base_url if base_url.endswith("/") else f"{base_url}/"
+        self.timeout = timeout
+
+    def _get_url(self, path):
+        return urljoin(self.base_url, path.lstrip("/"))
+
+
+class EventsProviderClient(BaseClient):
     def __init__(self):
-        self.base_url = settings.EVENTS_PROVIDER_URL
-        self.lms_key = settings.LMS_API_KEY
-        self.headers = {"X-API-Key": self.lms_key, "Content-Type": "application/json"}
-        self.timeout = 10.0
+        super().__init__(base_url=settings.EVENTS_PROVIDER_URL)
+        self.headers = {
+            "Content-Type": "application/json",
+            "X-API-Key": settings.LMS_API_KEY,
+        }
 
     def _get_url(self, path: str) -> str:
         """Вспомогательный метод для безопасной сборки URL."""
@@ -75,4 +85,29 @@ class EventsProviderClient:
             return response.json()
         except httpx.HTTPError as e:
             logger.error("Error during unregistration: %s", e)
+            raise
+
+
+class CapashinoClient(BaseClient):
+    def __init__(self):
+        super().__init__(base_url=settings.CAPASHINO_URL)
+        self.headers = {
+            "Content-Type": "application/json",
+            "X-API-Key": settings.LMS_API_KEY,
+        }
+
+    def send_notification(self, payload):
+        url = self._get_url("api/notifications")
+
+        try:
+            responce = httpx.post(url, json=payload, headers=self.headers, timeout=self.timeout)
+
+            if responce.status_code == 409:
+                return responce.json()
+
+            responce.raise_for_status()
+            return responce.json()
+
+        except httpx.HTTPError as e:
+            logger.error("Capashino API error: %s", e)
             raise

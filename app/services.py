@@ -1,4 +1,5 @@
 import logging
+import uuid
 from datetime import timedelta
 
 from django.core.cache import cache
@@ -114,13 +115,17 @@ def create_ticket_registration(data):
             },
         )
 
+        outbox_id = uuid.uuid4()
+
         _outbox_msg = OutboxMessage.objects.create(
+            id=outbox_id,
             event_type="ticket_purchased",
             payload={
                 "ticket_id": provider_ticket_id,
                 "email": data.get("email"),
                 "fullname": f"{data.get('first_name')} {data.get('last_name')}",
                 "message": "Билет куплен",
+                "idempotency_key": outbox_id,
             },
         )
 

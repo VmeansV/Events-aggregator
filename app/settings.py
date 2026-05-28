@@ -92,8 +92,12 @@ CELERY_BEAT_SCHEDULER = "django_celery_beat.schedulers:DatabaseScheduler"
 
 CELERY_BEAT_SCHEDULE = {
     "sync-events-every-day": {
-        "task": "sync_events_task",
+        "task": "app.tasks.daily_sync_task",
         "schedule": crontab(hour=3, minute=0),
+    },
+    "recover-outbox-messages-every-5-min": {
+        "task": "app.tasks.processe_outbox_message",
+        "schedule": 300.0,
     },
 }
 
@@ -127,3 +131,7 @@ EVENTS_PROVIDER_URL = os.getenv(
     "http://student-system-events-provider-web.student-system-events-provider.svc:8000/api",
 )
 LMS_API_KEY = os.getenv("LMS_API_KEY")
+
+CAPASHINO_URL = os.getenv(
+    "CAPASHINO_URL", "http://student-system-capashino-web.student-system-capashino.svc:8000"
+)

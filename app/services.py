@@ -9,7 +9,6 @@ from app.client import EventsProviderClient
 from app.exceptions import IdempotencyConflictError
 from app.models import Event, OutboxMessage, Registration
 from app.serializers import RegistrationSerializer
-from app.tasks import process_outbox_message
 
 logger = logging.getLogger(__name__)
 
@@ -87,7 +86,7 @@ def create_ticket_registration(data):
             },
         )
 
-        transaction.on_commit(lambda: process_outbox_message.delay(outbox_id))
+        # transaction.on_commit(lambda: process_outbox_message.delay(outbox_id))
 
     return RegistrationSerializer(reg).data
 

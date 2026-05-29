@@ -11,9 +11,14 @@ class WorkerConfig(AppConfig):
     name = "app"
 
     def ready(self):
-        if os.environ.get("RUN_MAIN") == "true" or os.environ.get("GUNICORN_STARTED") == "true":
+        if os.environ.get("RUN_MAIN") != "true" and os.environ.get("GUNICORN_STARTED") != "true":
+            if "manage.py" in os.sys.argv and "runserver" not in os.sys.argv:
+                return
+
+        if getattr(self, "_worker_started", False):
             return
 
+        self._worker_started = True
         os.environ["GUNICORN_STARTED"] = "true"
 
         def start_loop():

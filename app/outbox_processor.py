@@ -2,16 +2,19 @@ import asyncio
 import logging
 
 from asgiref.sync import sync_to_async
+from django.apps import apps
 
-from .client import CapashinoClient
-from .models import OutboxMessage
+from app.client import CapashinoClient
 
 logger = logging.getLogger(__name__)
 
 
 async def run_outbox_worker():
     """Фоновая корутина, которая проверяет базу раз в 5 секунд."""
+
+    OutboxMessage = apps.get_model("app", "OutboxMessage")
     client = CapashinoClient()
+
     while True:
         try:
             messages = await sync_to_async(list)(
@@ -24,6 +27,7 @@ async def run_outbox_worker():
                     msg.status = "processed"
                     await sync_to_async(msg.save)()
                     logger.info("Outbox message %s processed by coroutine", msg.id)
+
                 except Exception as e:
                     logger.error("Failed to process outbox %s: %s", msg.id, e)
 

@@ -23,7 +23,7 @@ async def run_outbox_worker():
 
             for msg in messages:
                 try:
-                    await sync_to_async(client.create_notification)(msg.payload)
+                    await sync_to_async(client.send_notification)(msg.payload)
                     msg.status = "processed"
                     await sync_to_async(msg.save)()
                     logger.info("Outbox message %s processed by coroutine", msg.id)

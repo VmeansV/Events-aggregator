@@ -24,7 +24,7 @@ class IdempotencyTestCase(APITestCase):
         )
         try:
             self.url = reverse("ticket-list")
-        except:
+        except Exception:
             self.url = "/api/tickets/"
 
     @patch("app.services.EventsProviderClient.register")

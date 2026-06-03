@@ -13,3 +13,4 @@ SQLAlchemy==2.0.49
 gunicorn
 dj-database-url
 kombu
+sentry-sdk

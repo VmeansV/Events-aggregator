@@ -2,8 +2,10 @@ import os
 from pathlib import Path
 
 import dj_database_url
+import sentry_sdk
 from celery.schedules import crontab
 from dotenv import load_dotenv
+from sentry_sdk.integrations.django import DjangoIntegration
 
 load_dotenv()
 
@@ -138,3 +140,14 @@ LMS_API_KEY = os.getenv("LMS_API_KEY")
 CAPASHINO_URL = os.getenv(
     "CAPASHINO_URL", "http://student-system-capashino-web.student-system-capashino.svc:8000"
 )
+
+
+SENTRY_DSN = os.getenv("SENTRY_DSN")
+
+if SENTRY_DSN:
+    sentry_sdk.init(
+        dsn=SENTRY_DSN,
+        integrations=DjangoIntegration,
+        traces_sample_rate=1.0,
+        send_default_pii=True,
+    )

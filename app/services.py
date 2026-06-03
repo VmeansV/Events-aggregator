@@ -86,8 +86,6 @@ def create_ticket_registration(data):
             },
         )
 
-        # transaction.on_commit(lambda: process_outbox_message.delay(outbox_id))
-
     return RegistrationSerializer(reg).data
 
 

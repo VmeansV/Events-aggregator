@@ -1,7 +1,7 @@
 from prometheus_client import Counter, Gauge, Histogram
 
 HTTP_REQUEST_TOTAL = Counter(
-    "http_request_total", "Общее количество HTTP-запросов", ["method", "endpoint", "status"]
+    "http_requests_total", "Общее количество HTTP-запросов", ["method", "endpoint", "status"]
 )
 
 HTTP_REQUEST_DURATION = Histogram(
@@ -13,7 +13,9 @@ HTTP_REQUEST_DURATION = Histogram(
 
 
 EVENTS_PROVIDER_REQUEST_TOTAL = Counter(
-    "events_provider_request_total", "Количество запросов к Events Provider", ["endpoint", "status"]
+    "events_provider_requests_total",
+    "Количество запросов к Events Provider",
+    ["endpoint", "status"],
 )
 
 EVENTS_PROVIDER_DURATION = Histogram(
@@ -26,10 +28,10 @@ EVENTS_PROVIDER_DURATION = Histogram(
 
 TICKETS_CREATED_TOTAL = Gauge("tickets_created_total", "Общее количество созданных билетов в БД")
 TICKETS_CANCELLED_TOTAL = Gauge(
-    "ticket_cancelled_total", "Общее количество отменённых билетов в БД"
+    "tickets_cancelled_total", "Общее количество отменённых билетов в БД"
 )
 EVENTS_TOTAL = Gauge("events_total", "Общее количество событий в БД")
 
 
-CACHE_HITS_TOTAL = Counter("cache_hits", "Попадания в кеш (seats)")
+CACHE_HITS_TOTAL = Counter("cache_hits_total", "Попадания в кеш (seats)")
 CACHE_MISSES_TOTAL = Counter("cache_misses_total", "Промахи кеша (seats)")

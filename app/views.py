@@ -1,14 +1,16 @@
 import httpx
-from django.http import Http404
+from django.http import Http404, HttpResponse
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt
+from prometheus_client import CONTENT_TYPE_LATEST, REGISTRY, generate_latest
 from rest_framework import generics, status
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from app.exceptions import IdempotencyConflictError
-from app.models import Event
+from app.metrics import EVENTS_TOTAL, TICKETS_CANCELLED_TOTAL, TICKETS_CREATED_TOTAL
+from app.models import Event, Registration
 from app.pagination import EventPagination
 from app.serializers import EventSerializer
 from app.services import (
@@ -99,3 +101,17 @@ class TicketDetailAPIView(APIView):
             return Response({"success": True}, status=200)
         except Exception as e:
             return Response({"error": str(e)}, status=400)
+
+
+def metrics_view(request):
+    """
+    Эндпоинт для сбора метрик.
+    Не использует APIView, чтобы возвращать чистый текст без оберток DRF.
+    """
+    TICKETS_CREATED_TOTAL.set(Registration.objects.count())
+    EVENTS_TOTAL.set(Event.objects.count())
+    TICKETS_CANCELLED_TOTAL.set(0)  # Пока 0, ткк у нас физическое удаление регистрации
+
+    metrics_data = generate_latest(REGISTRY)
+
+    return HttpResponse(metrics_data, content_type=CONTENT_TYPE_LATEST)

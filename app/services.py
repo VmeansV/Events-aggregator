@@ -7,6 +7,7 @@ from django.shortcuts import get_object_or_404
 
 from app.client import EventsProviderClient
 from app.exceptions import IdempotencyConflictError
+from app.metrics import CACHE_HITS_TOTAL, CACHE_MISSES_TOTAL
 from app.models import Event, OutboxMessage, Registration
 from app.serializers import RegistrationSerializer
 
@@ -21,7 +22,10 @@ def get_event_seats_with_cache(event_id):
     cached_seats = cache.get(cache_key)
 
     if cached_seats is not None:
+        CACHE_HITS_TOTAL.inc()
         return {"event_id": str(event.id), "available_seats": cached_seats}
+
+    CACHE_MISSES_TOTAL.inc()
 
     client = EventsProviderClient()
     remote_data = client.get_seats(event.id)

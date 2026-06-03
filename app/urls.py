@@ -9,10 +9,12 @@ from app.views import (
     SyncTriggerAPIView,
     TicketAPIView,
     TicketDetailAPIView,
+    metrics_view,
 )
 
 urlpatterns = [
     path("admin/", admin.site.urls),
+    re_path(r"^metrics/?$", metrics_view, name="metrics"),
     re_path(r"^api/health/?$", HealthCheckAPIView.as_view(), name="health-check"),
     re_path(r"^api/sync/trigger/?$", SyncTriggerAPIView.as_view(), name="sync-trigger"),
     re_path(r"^api/events/?$", EventListAPIView.as_view(), name="event-list"),

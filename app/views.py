@@ -110,7 +110,9 @@ def metrics_view(request):
     """
     TICKETS_CREATED_TOTAL.set(Registration.objects.count())
     EVENTS_TOTAL.set(Event.objects.count())
-    TICKETS_CANCELLED_TOTAL.set(0)  # Пока 0, ткк у нас физическое удаление регистрации
+    TICKETS_CANCELLED_TOTAL.set(
+        Registration.objects.filter(status=Registration.Status.CANCELLED).count()
+    )
 
     metrics_data = generate_latest(REGISTRY)
 

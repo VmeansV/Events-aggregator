@@ -59,6 +59,10 @@ class Event(models.Model):
 
 
 class Registration(models.Model):
+    class Status(models.TextChoices):
+        RESERVED = "reserved"
+        CANCELLED = "cancelled"
+
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     event = models.ForeignKey("Event", on_delete=models.CASCADE)
     first_name = models.CharField(max_length=100, null=False)
@@ -67,9 +71,18 @@ class Registration(models.Model):
     seat = models.CharField(max_length=255)
     created_at = models.DateTimeField(auto_now_add=True)
     idempotency_key = models.CharField(max_length=255, null=True, blank=True, unique=True)
+    status = models.CharField(
+        max_length=20, choices=Status.choices, default=Status.RESERVED, db_index=True
+    )
 
     class Meta:
-        unique_together = ("event", "seat")
+        constraints = [
+            models.UniqueConstraint(
+                fields=["event", "seat"],
+                condition=models.Q(status="reserved"),
+                name="unique_active_reservation",
+            )
+        ]
 
 
 class OutboxMessage(models.Model):

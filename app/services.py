@@ -43,7 +43,9 @@ def create_ticket_registration(data):
     email = data.get("email")
 
     if client_key:
-        existing_reg = Registration.objects.filter(idempotency_key=client_key).first()
+        existing_reg = Registration.objects.filter(
+            idempotency_key=client_key, status=Registration.Status.RESERVED
+        ).first()
 
         if existing_reg:
             if (
@@ -77,6 +79,7 @@ def create_ticket_registration(data):
             last_name=data.get("last_name"),
             email=email,
             idempotency_key=client_key,
+            status=Registration.Status.RESERVED,
         )
 
         outbox_id = uuid.uuid4()
@@ -96,8 +99,12 @@ def create_ticket_registration(data):
 def cancel_ticket_registration(ticket_id):
     """Бизнес-логика отмены регистрации."""
     reg = Registration.objects.filter(id=ticket_id).select_related("event").first()
+
     if not reg:
         return False, "Ticket not found locally"
+
+    if reg.status == Registration.Status.CANCELLED:
+        return True, None
 
     client = EventsProviderClient()
 
@@ -105,6 +112,7 @@ def cancel_ticket_registration(ticket_id):
         # Отменяем у провайдера
         client.unregister(event_id=reg.event.id, ticket_id=ticket_id)
         # Удаляем у себя
-        reg.delete()
+        reg.status = Registration.Status.CANCELLED
+        reg.save()
 
     return True, None

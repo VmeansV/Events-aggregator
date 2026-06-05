@@ -30,4 +30,4 @@ class RegistrationSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Registration
-        fields = ["ticket_id", "event_id", "seat", "first_name", "last_name", "email"]
+        fields = ["ticket_id", "event_id", "seat", "first_name", "last_name", "email", "status"]
